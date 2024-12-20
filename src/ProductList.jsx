@@ -1,10 +1,16 @@
 import React, { useState,useEffect } from 'react';
 import './ProductList.css'
 import CartItem from './CartItem';
-function ProductList() {
-    const [showCart, setShowCart] = useState(false); 
-    const [showPlants, setShowPlants] = useState(false); // State to control the visibility of the About Us page
 
+function ProductList() {
+    const [showCart, setShowCart] = useState(false);
+    const [showPlants, setShowPlants] = useState(true);
+    const [addedToCart, setAddedToCart] = useState({});
+    const dispatch = useDispatch();
+
+    // Fetch cart items and calculate total quantity
+    const cartItems = useSelector((state) => state.cart.items);
+    const totalQuantity = cartItems.reduce((total, item) => total + item.quantity, 0);
     const plantsArray = [
         {
             category: "Air Purifying Plants",
@@ -235,19 +241,28 @@ function ProductList() {
    const handleCartClick = (e) => {
     e.preventDefault();
     setShowCart(true); // Set showCart to true when cart icon is clicked
+    setShowPlants(false); // Ensure plants are hidden when showing the cart
 };
 const handlePlantsClick = (e) => {
     e.preventDefault();
     setShowPlants(true); // Set showAboutUs to true when "About Us" link is clicked
     setShowCart(false); // Hide the cart when navigating to About Us
 };
+const handleContinueShopping = () => {
+    setShowPlants(true); // Show plants view
+    setShowCart(false); // Hide cart view
+};
+  // Handle adding a plant to the cart
+  const handleAddToCart = (plant) => {
+    dispatch(addItem(plant)); // Dispatch the addItem action to Redux
+    setAddedToCart((prevState) => ({
+        ...prevState,
+        [plant.name]: true, // Mark the plant as added
+    }));
+};
 
-   const handleContinueShopping = (e) => {
-    e.preventDefault();
-    setShowCart(false);
-  };
-    return (
-        <div>
+return (
+      <div>
              <div className="navbar" style={styleObj}>
             <div className="tag">
                <div className="luxury">
@@ -259,23 +274,138 @@ const handlePlantsClick = (e) => {
                     </div>
                     </a>
                 </div>
-              
             </div>
-            <div style={styleObjUl}>
-                <div> <a href="#" onClick={(e)=>handlePlantsClick(e)} style={styleA}>Plants</a></div>
-                <div> <a href="#" onClick={(e) => handleCartClick(e)} style={styleA}><h1 className='cart'><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" id="IconChangeColor" height="68" width="68"><rect width="156" height="156" fill="none"></rect><circle cx="80" cy="216" r="12"></circle><circle cx="184" cy="216" r="12"></circle><path d="M42.3,72H221.7l-26.4,92.4A15.9,15.9,0,0,1,179.9,176H84.1a15.9,15.9,0,0,1-15.4-11.6L32.5,37.8A8,8,0,0,0,24.8,32H8" fill="none" stroke="#faf9f9" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" id="mainIconPathAttribute"></path></svg></h1></a></div>
+           <div style={styleObjUl}>
+                <a
+                    href="#" onClick={handlePlantsClick}
+                    style={styleA}
+                >
+                    Plants
+                </a>
+                <a
+                    href="#"
+                    onClick={handleCartClick}
+                   style={styleA}
+                >
+                  <h1 className="cart">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" height="68" width="68">
+        <rect width="156" height="156" fill="none"></rect>
+        <circle cx="80" cy="216" r="12"></circle>
+        <circle cx="184" cy="216" r="12"></circle>
+        <path
+          d="M42.3,72H221.7l-26.4,92.4A15.9,15.9,0,0,1,179.9,176H84.1a15.9,15.9,0,0,1-15.4-11.6L32.5,37.8A8,8,0,0,0,24.8,32H8"
+          fill="none"
+          stroke="#faf9f9"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+        ></path>
+      </svg>
+    </h1>
+    {totalQuantity > 0 && (
+      <span
+        style={{
+          backgroundColor: 'red',
+          color: 'white',
+          borderRadius: '50%',
+          padding: '2px 6px',
+          fontSize: '14px',
+          position: 'absolute', // Change position to absolute for placement
+          top: '10px', 
+        }}
+      >
+        {totalQuantity}
+      </span>
+    )}
+  </a>
+  </div>
+        </div>
+
+        {/* Product List or Cart */}
+        {showPlants && !showCart ? (
+            <div className="product-grid">
+                {plantsArray.map((category, index) => (
+                    <div key={index}>
+                        <h1 style={{ color: '#4CAF50' }}>{category.category}</h1>
+                        <div className="product-list">
+                            {category.plants.map((plant, plantIndex) => (
+                                <div
+                                    className="product-card"
+                                    key={plantIndex}
+                                    style={{
+                                        border: '1px solid #ddd',
+                                        padding: '15px',
+                                        margin: '10px',
+                                        borderRadius: '5px',
+                                    }}
+                                >
+                                    <img
+                                        className="product-image"
+                                        src={plant.image}
+                                        alt={plant.name}
+                                        style={{
+                                            width: '100%',
+                                            height: '200px',
+                                            objectFit: 'cover',
+                                        }}
+                                    />
+                                    <div
+                                        className="product-title"
+                                        style={{
+                                            fontSize: '18px',
+                                            fontWeight: 'bold',
+                                        }}
+                                    >
+                                        {plant.name}
+                                    </div>
+                                    <div className="product-description">{plant.description}</div>
+                                    <div
+                                        className="product-cost"
+                                        style={{
+                                            color: '#4CAF50',
+                                            fontSize: '16px',
+                                        }}
+                                    >
+                                        {plant.cost}
+                                    </div>
+                                    <button
+                                        className="product-button"
+                                        onClick={() => handleAddToCart(plant)}
+                                        disabled={addedToCart[plant.name]}
+                                        style={{
+                                            backgroundColor: '#4CAF50',
+                                            color: 'white',
+                                            border: 'none',
+                                            padding: '10px 20px',
+                                            borderRadius: '5px',
+                                            cursor: 'pointer',
+                                            marginTop: '10px',
+                                        }}
+                                    >
+                                        {addedToCart[plant.name] ? "Added" : "Add to Cart"}
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
             </div>
-        </div>
-        {!showCart? (
-        <div className="product-grid">
-
-
-        </div>
- ) :  (
-    <CartItem onContinueShopping={handleContinueShopping}/>
-)}
+        ) : showCart ? (
+            <CartItem onContinueShopping={handleContinueShopping} />
+        ) : (
+            <div
+                style={{
+                    textAlign: 'center',
+                    marginTop: '50px',
+                    fontSize: '20px',
+                    color: '#4CAF50',
+                }}
+            >
+                Welcome to Paradise Nursery! Select "Plants" to explore our products.
+            </div>
+        )}
     </div>
-    );
+);
 }
 
 export default ProductList;
